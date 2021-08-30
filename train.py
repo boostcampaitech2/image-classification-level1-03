@@ -242,7 +242,7 @@ def train(data_dir, model_dir, args):
 
             val_loss = np.sum(val_loss_items) / len(val_loader)
             val_acc = np.sum(val_acc_items) / len(val_set)
-            
+
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
             else:
@@ -285,7 +285,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='ensemble', help='criterion type (default: ensemble)')
-    parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
+    parser.add_argument('--lr_decay_step', type=int, default=5, help='learning rate scheduler deacy step (default: 5)')
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
 
