@@ -43,16 +43,20 @@ def grid_image(np_images, gts, preds, n=16, shuffle=False):
     n_grid = np.ceil(n ** 0.5)
     tasks = ["mask", "gender", "age"]
     for idx, choice in enumerate(choices):
-        gt = gts[choice].item()
-        pred = preds[choice].item()
+        gt1 = gts[0][choice].item()
+        gt2 = gts[1][choice].item()
+        gt3 = gts[2][choice].item()
+        pred1 = preds[0][choice].item()
+        pred2 = preds[1][choice].item()
+        pred3 = preds[2][choice].item()
         image = np_images[choice]
         # title = f"gt: {gt}, pred: {pred}"
-        gt_decoded_labels = MaskBaseDataset.decode_multi_class(gt)
-        pred_decoded_labels = MaskBaseDataset.decode_multi_class(pred)
+        # gt_decoded_labels = MaskBaseDataset.decode_multi_class(gt)
+        # pred_decoded_labels = MaskBaseDataset.decode_multi_class(pred)
         title = "\n".join([
             f"{task} - gt: {gt_label}, pred: {pred_label}"
             for gt_label, pred_label, task
-            in zip(gt_decoded_labels, pred_decoded_labels, tasks)
+            in zip((gt1, gt2, gt3), (pred1, pred2, pred3), tasks)
         ])
 
         plt.subplot(n_grid, n_grid, idx + 1, title=title)
@@ -234,12 +238,12 @@ def train(data_dir, model_dir, args):
                 val_loss_items.append(loss_item)
                 val_acc_items.append(acc_item)
 
-                # if figure is None:
-                #     inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
-                #     inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
-                #     figure = grid_image(
-                #         inputs_np, labels, (), n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
-                #     )
+                if figure is None:
+                    inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
+                    inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
+                    figure = grid_image(
+                        inputs_np, labels, (pred1, pred2, pred3), n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
+                    )
 
             val_loss = np.sum(val_loss_items) / len(val_loader)
             val_acc = np.sum(val_acc_items) / len(val_set)
