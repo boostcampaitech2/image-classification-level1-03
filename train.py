@@ -162,9 +162,9 @@ def train(data_dir, model_dir, args):
         for idx, train_batch in enumerate(train_loader):
             inputs, labels = train_batch
             inputs = inputs.to(device)
-            label1, label2, label3 = labels
+            label1, label2, label3, multi_label = labels
             # print(label2)
-            label1, label2, label3 = label1.to(device), label2.to(device), label3.to(device)
+            label1, label2, label3, multi_label = label1.to(device), label2.to(device), label3.to(device), multi_label.to(device)
 
             optimizer.zero_grad()
 
@@ -172,10 +172,12 @@ def train(data_dir, model_dir, args):
             pred1 = torch.argmax(out1, dim=-1)
             pred2 = torch.argmax(out2, dim=-1)
             pred3 = torch.argmax(out3, dim=-1)
+            pred = pred1 * 6 + pred2 * 3 + pred3
 
             match1 = (pred1 == label1).sum().item()
             match2 = (pred2 == label2).sum().item()
             match3 = (pred3 == label3).sum().item()
+            match = (pred==multi_label).sum().item()
 
             loss1 = criterion[0](out1, label1)
             loss2 = criterion[1](out2, label2)
@@ -185,7 +187,8 @@ def train(data_dir, model_dir, args):
             optimizer.step()
 
             loss_value += ((loss1+loss2+loss3)/3.0).item()
-            matches += (match1 + match2 + match3)/3.0
+            # matches += (match1 + match2 + match3)/3.0
+            matches += match
 
             if (idx + 1) % args.log_interval == 0:
                 train_loss = loss_value / args.log_interval
