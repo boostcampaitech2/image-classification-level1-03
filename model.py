@@ -44,7 +44,7 @@ class EnsembleModel(nn.Module):
             nn.Linear(1536, 3)) # mask classifier
         self.classifier2 = nn.Sequential(
             nn.Dropout(0.2),
-            nn.Linear(1536, 3)) # gender classifier
+            nn.Linear(1536, 2)) # gender classifier
         self.classifier3 = nn.Sequential(
             nn.Dropout(0.2),
             nn.Linear(1536, 3)) # age classifier
