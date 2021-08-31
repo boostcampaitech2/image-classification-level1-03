@@ -4,7 +4,6 @@ from importlib import import_module
 
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader
 
 from dataset import TestDataset, TrainDataset
 
@@ -82,7 +81,7 @@ def inference(data_dir, model_dir, output_dir, args):
                     ans += 12
                 answer.append(ans)
 
-    info['ans'] = ans
+    info['ans'] = answer
     info.to_csv(os.path.join(output_dir, f'output.csv'), index=False)
     print(f'Inference Done!')
 
