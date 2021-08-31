@@ -245,6 +245,7 @@ def train(data_dir, model_dir, args):
             # best_val_loss = min(best_val_loss, val_loss)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
+                # patience = 0
             else:
                 patience += 1
                 print(patience)
