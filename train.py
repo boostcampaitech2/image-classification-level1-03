@@ -159,6 +159,10 @@ def train(data_dir, model_dir, args):
         model.train()
         loss_value = 0
         matches = 0
+        matches_age = [0, 0, 0]
+        nums_age = [0, 0, 0]
+        age_acc = [0, 0, 0]
+
         for idx, train_batch in enumerate(train_loader):
             inputs, labels = train_batch
             inputs = inputs.to(device)
@@ -177,6 +181,19 @@ def train(data_dir, model_dir, args):
             match2 = (pred2 == label2).sum().item()
             match3 = (pred3 == label3).sum().item()
             match = (pred==multi_label).sum().item()
+            
+            match_age = [0, 0, 0]
+            num_age = [0, 0, 0]
+            for p, l in zip(pred3, label3):
+                for i in range(3):
+                    if p==i and l==i:
+                        match_age[i] += 1
+            for i in range(3):
+                num_age[i] = (label3==i).sum().item()
+                nums_age[i] += num_age[i]
+                if num_age[i] != 0:
+                    match_age[i] = match_age[i]/num_age[i]
+                matches_age[i] += match_age[i]
 
             loss1 = criterion[0](out1, label1)
             loss2 = criterion[1](out2, label2)
@@ -187,21 +204,30 @@ def train(data_dir, model_dir, args):
 
             loss_value += ((loss1+loss2+loss3)/3.0).item()
             # matches += (match1 + match2 + match3)/3.0
-            matches += match
-
+            matches += match3
+            #print(matches_elderly)
             if (idx + 1) % args.log_interval == 0:
                 train_loss = loss_value / args.log_interval
                 train_acc = matches / args.batch_size / args.log_interval
+                for i in range(3):
+                    age_acc[i] = matches_age[i] / args.log_interval#
+                    nums_age[i] /= args.log_interval
                 current_lr = get_lr(optimizer)
                 print(
                     f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || "
-                    f"training loss {train_loss:4.4} || training accuracy {train_acc:4.2%} || lr {current_lr}"
+                    f"t loss {train_loss:4.4} || t acc {train_acc:4.2%} || lr {current_lr} || "
+                    f"age0 acc {age_acc[0]:4.2%} || n of age0 {nums_age[0]} || "
+                    f"age1 acc {age_acc[1]:4.2%} || n of age1 {nums_age[1]} || "
+                    f"age2 acc {age_acc[2]:4.2%} || n of age2 {nums_age[2]}"
                 )
                 logger.add_scalar("Train/loss", train_loss, epoch * len(train_loader) + idx)
                 logger.add_scalar("Train/accuracy", train_acc, epoch * len(train_loader) + idx)
 
                 loss_value = 0
                 matches = 0
+                for i in range(3):
+                    nums_age[i] = 0
+                    matches_age[i] = 0
 
         scheduler.step()
 
@@ -211,6 +237,8 @@ def train(data_dir, model_dir, args):
             model.eval()
             val_loss_items = []
             val_acc_items = []
+            matches_age = [0, 0, 0]
+            nums_age = [0, 0, 0]
             figure = None
             for val_batch in val_loader:
                 inputs, labels = val_batch
@@ -229,7 +257,13 @@ def train(data_dir, model_dir, args):
                 match2 = (pred2 == label2).sum().item()
                 match3 = (pred3 == label3).sum().item()
                 match = (pred==multi_label).sum().item()
-
+                
+                for p, l in zip(pred3, label3):
+                    for i in range(3):
+                        if p==i and l==i:
+                            matches_age[i] += 1
+                for i in range(3):
+                    nums_age[i] += (label3==i).sum().item()
 
                 loss1 = criterion[0](out1, label1)
                 loss2 = criterion[1](out2, label2)
@@ -237,9 +271,11 @@ def train(data_dir, model_dir, args):
 
                 loss_item = ((loss1+loss2+loss3)/3.0).item()
                 # acc_item = (match1 + match2 + match3)/3.0
-                acc_item = match
+                acc_item = match3
+
                 val_loss_items.append(loss_item)
                 val_acc_items.append(acc_item)
+
 
                 if figure is None:
                     inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
@@ -249,8 +285,14 @@ def train(data_dir, model_dir, args):
                     )
 
             val_loss = np.sum(val_loss_items) / len(val_loader)
+            val_age_acc = [0, 0, 0]
+            for i in range(3):
+                val_age_acc[i] = matches_age[i] / nums_age[i]
+                print(matches_age[i], nums_age[i])
             val_acc = np.sum(val_acc_items) / len(val_set)
-            # best_val_loss = min(best_val_loss, val_loss)
+            print(f"sum = {np.sum(val_acc_items)} and len_val = {len(val_set)} ")
+            print(f"val_acc_items = {val_acc_items}")
+            best_val_loss = min(best_val_loss, val_loss)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
             else:
@@ -264,7 +306,10 @@ def train(data_dir, model_dir, args):
             torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
             print(
                 f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
-                f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}"
+                f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2} || "
+                f"age0 acc : {val_age_acc[0]:4.2%} || n of age0 : {nums_age[0]} || "
+                f"age1 acc : {val_age_acc[1]:4.2%} || n of age1 : {nums_age[1]} || "
+                f"age2 acc : {val_age_acc[2]:4.2%} || n of age2 : {nums_age[2]} "
             )
             logger.add_scalar("Val/loss", val_loss, epoch)
             logger.add_scalar("Val/accuracy", val_acc, epoch)
