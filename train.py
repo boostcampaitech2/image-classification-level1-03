@@ -163,6 +163,7 @@ def train(data_dir, model_dir, args):
             inputs, labels = train_batch
             inputs = inputs.to(device)
             label1, label2, label3 = labels
+            # print(label2)
             label1, label2, label3 = label1.to(device), label2.to(device), label3.to(device)
 
             optimizer.zero_grad()
@@ -274,7 +275,7 @@ if __name__ == '__main__':
 
     # Data and model checkpoints directories
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
-    parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 50)')
+    parser.add_argument('--epochs', type=int, default=5, help='number of epochs to train (default: 50)')
     parser.add_argument('--dataset', type=str, default='TrainDataset', help='dataset augmentation type (default: TrainDataset)')
     parser.add_argument('--augmentation', type=str, default='Augmentation', help='data augmentation type (default: Augmentation)')
     parser.add_argument("--resize", nargs="+", type=list, default=[300, 300], help='resize size for image when training')
