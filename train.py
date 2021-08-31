@@ -242,11 +242,12 @@ def train(data_dir, model_dir, args):
 
             val_loss = np.sum(val_loss_items) / len(val_loader)
             val_acc = np.sum(val_acc_items) / len(val_set)
-
+            # best_val_loss = min(best_val_loss, val_loss)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
             else:
                 patience += 1
+                print(patience)
 
             if val_acc > best_val_acc:
                 print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
@@ -262,9 +263,8 @@ def train(data_dir, model_dir, args):
             logger.add_figure("results", figure, epoch)
             print()
 
-        if patience == 10:
+        if patience == args.patience:
             break
-        break
 
 
 if __name__ == '__main__':
@@ -288,6 +288,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr_decay_step', type=int, default=5, help='learning rate scheduler deacy step (default: 5)')
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
+    parser.add_argument('--patience', type=int, default=10, help='check early stopping point (default: 10)')
 
     # Container environment
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/images'))
