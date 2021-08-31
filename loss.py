@@ -70,7 +70,8 @@ _criterion_entrypoints = {
     'focal': FocalLoss,
     'label_smoothing': LabelSmoothingLoss,
     'f1': F1Loss,
-    'ensemble': nn.CrossEntropyLoss
+    'ensemble': nn.CrossEntropyLoss,
+    'smooth' : nn.SmoothL1Loss
 }
 
 
