@@ -5,8 +5,7 @@ import torch.nn.functional as F
 
 # https://discuss.pytorch.org/t/is-this-a-correct-implementation-for-focal-loss-in-pytorch/43327/8
 class FocalLoss(nn.Module):
-    def __init__(self, weight=None,
-                 gamma=2., reduction='mean'):
+    def __init__(self, weight=None, gamma=2.0, reduction="mean"):
         nn.Module.__init__(self)
         self.weight = weight
         self.gamma = gamma
@@ -19,12 +18,12 @@ class FocalLoss(nn.Module):
             ((1 - prob) ** self.gamma) * log_prob,
             target_tensor,
             weight=self.weight,
-            reduction=self.reduction
+            reduction=self.reduction,
         )
 
 
 class LabelSmoothingLoss(nn.Module):
-    def __init__(self, classes=3, smoothing=0.0, dim=-1):
+    def __init__(self, classes=3, smoothing=0.2, dim=-1):
         super(LabelSmoothingLoss, self).__init__()
         self.confidence = 1.0 - smoothing
         self.smoothing = smoothing
@@ -46,6 +45,7 @@ class F1Loss(nn.Module):
         super().__init__()
         self.classes = classes
         self.epsilon = epsilon
+
     def forward(self, y_pred, y_true):
         assert y_pred.ndim == 2
         assert y_true.ndim == 1
@@ -64,12 +64,18 @@ class F1Loss(nn.Module):
         f1 = f1.clamp(min=self.epsilon, max=1 - self.epsilon)
         return 1 - f1.mean()
 
+mask_weight = torch.tensor([0.091, 0.455, 0.455]).to("cuda")
+gender_weight = torch.tensor([0.61, 0.39]).to("cuda")
+age_weight = torch.tensor([0.114, 0.119, 0.767]).to("cuda")
 
 _criterion_entrypoints = {
-    'cross_entropy': nn.CrossEntropyLoss,
-    'focal': FocalLoss,
-    'label_smoothing': LabelSmoothingLoss,
-    'f1': F1Loss
+    "cross_entropy": nn.CrossEntropyLoss,
+    # "weighted_cross_entropy_Mask:": nn.CrossEntropyLoss(weight=mask_weight),        # (weight=weight) : error
+    # "weighted_cross_entropy_Gender:": nn.CrossEntropyLoss(weight=gender_weight),
+    # "weighted_cross_entropy_Age:": nn.CrossEntropyLoss(weight=age_weight),
+    "focal": FocalLoss,
+    "label_smoothing": LabelSmoothingLoss,
+    "f1": F1Loss,
 }
 
 
@@ -82,9 +88,16 @@ def is_criterion(criterion_name):
 
 
 def create_criterion(criterion_name, **kwargs):
+    if criterion_name == "weighted_cross_entropy_Mask":
+        return nn.CrossEntropyLoss(weight=mask_weight)
+    elif criterion_name == "weighted_cross_entropy_Gender":
+        return nn.CrossEntropyLoss(weight=gender_weight)
+    elif criterion_name == "weighted_cross_entropy_Age":
+        return nn.CrossEntropyLoss(weight=age_weight)
+
     if is_criterion(criterion_name):
         create_fn = criterion_entrypoint(criterion_name)
         criterion = create_fn(**kwargs)
     else:
-        raise RuntimeError('Unknown loss (%s)' % criterion_name)
+        raise RuntimeError("Unknown loss (%s)" % criterion_name)
     return criterion
