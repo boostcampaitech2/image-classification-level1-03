@@ -85,7 +85,7 @@ def is_criterion(criterion_name):
 def create_criterion(criterion_name, **kwargs):
     if criterion_name == 'ensemble':
         return (nn.CrossEntropyLoss(weight=torch.tensor([1., 5., 5.])).to('cuda'),
-                nn.CrossEntropyLoss().to('cuda'), # weight=torch.tensor([6., 4.])
+                nn.CrossEntropyLoss(weight=torch.tensor([6., 4.])).to('cuda'),
                 nn.CrossEntropyLoss(weight=torch.tensor([1., 1., 6.])).to('cuda'))
     if is_criterion(criterion_name):
         create_fn = criterion_entrypoint(criterion_name)
