@@ -4,12 +4,14 @@ import json
 import os
 import random
 import re
+import copy
 from importlib import import_module
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from torch._C import device
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -84,6 +86,16 @@ def increment_path(path, exist_ok=False):
         n = max(i) + 1 if i else 2
         return f"{path}{n}"
 
+def encode_age(pred):
+    for i, p in enumerate(pred):
+        if p < 30:
+            pred[i] = 0
+        elif p < 60:
+            pred[i] = 1
+        else:
+            pred[i] = 2
+    ret = torch.tensor(pred)
+    return ret
 
 def train(data_dir, model_dir, args):
     seed_everything(args.seed)
@@ -166,15 +178,18 @@ def train(data_dir, model_dir, args):
         for idx, train_batch in enumerate(train_loader):
             inputs, labels = train_batch
             inputs = inputs.to(device)
-            label1, label2, label3, multi_label = labels
-            label1, label2, label3, multi_label = label1.to(device), label2.to(device), label3.to(device), multi_label.to(device)
+            label1, label2, label3, multi_label, age_label = labels
+            label1, label2, label3, multi_label, age_label = label1.to(device), label2.to(device), label3.to(device), multi_label.to(device), age_label.to(device)
 
             optimizer.zero_grad()
 
             out1, out2, out3 = model(inputs)
             pred1 = torch.argmax(out1, dim=-1)
             pred2 = torch.argmax(out2, dim=-1)
-            pred3 = torch.argmax(out3, dim=-1)
+            # pred3 = torch.argmax(out3, dim=-1)
+            out3 = out3.squeeze()
+            pred3 = encode_age(out3.tolist())
+            pred3 = pred3.to(device)
             pred = pred1 * 6 + pred2 * 3 + pred3
 
             match1 = (pred1 == label1).sum().item()
@@ -195,16 +210,17 @@ def train(data_dir, model_dir, args):
                     match_age[i] = match_age[i]/num_age[i]
                 matches_age[i] += match_age[i]
 
+
             loss1 = criterion[0](out1, label1)
             loss2 = criterion[1](out2, label2)
-            loss3 = criterion[2](out3, label3)
+            loss3 = criterion[2](out3, age_label)
 
             (loss1 + loss2 + loss3).backward()
             optimizer.step()
 
             loss_value += ((loss1+loss2+loss3)/3.0).item()
             # matches += (match1 + match2 + match3)/3.0
-            matches += match3
+            matches += match
             #print(matches_elderly)
             if (idx + 1) % args.log_interval == 0:
                 train_loss = loss_value / args.log_interval
@@ -243,14 +259,17 @@ def train(data_dir, model_dir, args):
             for val_batch in val_loader:
                 inputs, labels = val_batch
                 inputs = inputs.to(device)
-                label1, label2, label3, multi_label = labels
-                label1, label2, label3, multi_label = label1.to(device), label2.to(device), label3.to(device), multi_label.to(device)
+                label1, label2, label3, multi_label, age_label = labels
+                label1, label2, label3, multi_label, age_label = label1.to(device), label2.to(device), label3.to(device), multi_label.to(device), age_label.to(device)
 
 
                 out1, out2, out3 = model(inputs)
+                out3 = out3.squeeze()
                 pred1 = torch.argmax(out1, dim=-1)
                 pred2 = torch.argmax(out2, dim=-1)
-                pred3 = torch.argmax(out3, dim=-1)
+                # pred3 = torch.argmax(out3, dim=-1)
+                pred3 = encode_age(out3.tolist())
+                pred3 = pred3.to(device)
                 pred = pred1 * 6 + pred2 * 3 + pred3
 
                 match1 = (pred1 == label1).sum().item()
@@ -267,11 +286,11 @@ def train(data_dir, model_dir, args):
 
                 loss1 = criterion[0](out1, label1)
                 loss2 = criterion[1](out2, label2)
-                loss3 = criterion[2](out3, label3)
+                loss3 = criterion[2](out3, age_label)
 
                 loss_item = ((loss1+loss2+loss3)/3.0).item()
                 # acc_item = (match1 + match2 + match3)/3.0
-                acc_item = match3
+                acc_item = match
 
                 val_loss_items.append(loss_item)
                 val_acc_items.append(acc_item)
@@ -301,9 +320,9 @@ def train(data_dir, model_dir, args):
 
             if val_acc > best_val_acc:
                 print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
-                torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
+                # torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
                 best_val_acc = val_acc
-            torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
+            # torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
             print(
                 f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
                 f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2} || "

@@ -47,7 +47,14 @@ class EnsembleModel(nn.Module):
             nn.Linear(1536, 2)) # gender classifier
         self.classifier3 = nn.Sequential(
             nn.Dropout(0.2),
-            nn.Linear(1536, 3)) # age classifier
+            nn.Linear(1536, 512, bias=True),
+            nn.ReLU(),
+            nn.Linear(512, 256, bias=True),
+            nn.ReLU(),
+            nn.Linear(256, 128, bias=True),
+            nn.ReLU(),
+            nn.Linear(128, 1, bias=True) # age classifier
+        )
 
     def forward(self, x):
         x = self.feature(x)
