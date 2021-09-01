@@ -70,7 +70,7 @@ age_weight = torch.tensor([0.114, 0.119, 0.767]).to("cuda")
 
 _criterion_entrypoints = {
     "cross_entropy": nn.CrossEntropyLoss,
-    # "weighted_cross_entropy_Mask:": nn.CrossEntropyLoss(weight=mask_weight),        # (weight=weight) : error
+    # "weighted_cross_entropy_Mask:": nn.CrossEntropyLoss(weight=mask_weight),        # (weight=mask_weight) : error
     # "weighted_cross_entropy_Gender:": nn.CrossEntropyLoss(weight=gender_weight),
     # "weighted_cross_entropy_Age:": nn.CrossEntropyLoss(weight=age_weight),
     "focal": FocalLoss,

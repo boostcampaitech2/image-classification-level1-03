@@ -35,7 +35,7 @@ def inference(data_dir, model_dir, output_dir, args):
     model = load_model(model_dir, num_classes, device).to(device)
     model.eval()
 
-    img_root = os.path.join(data_dir, "images")
+    img_root = os.path.join(data_dir, "cropped_images")
     submission_path = os.path.join(data_dir, "info.csv")
     result_path = os.path.join(data_dir, "result.csv")
     submission = pd.read_csv(submission_path)
@@ -52,7 +52,7 @@ def inference(data_dir, model_dir, output_dir, args):
         drop_last=False,
     )
 
-    print("Calculating inference results..")
+    print(f"Calculating {args.phase} inference results..")
     preds = []
     with torch.no_grad():
         for idx, images in enumerate(loader):
@@ -80,8 +80,8 @@ if __name__ == "__main__":
 
     # Data and model checkpoints directories
     parser.add_argument("--batch_size",type=int,default=64,help="input batch size for validing (default: 64)",)
-    parser.add_argument("--resize",type=tuple,default=(300, 300),help="resize size for image when you trained (default: (96, 128))",)
-    parser.add_argument("--model", type=str, default="ResNet50", help="model type (default: ResNet50)")
+    parser.add_argument("--resize",type=tuple,default=(224, 224),help="resize size for image when you trained (default: (96, 128))",)
+    parser.add_argument("--model", type=str, default="VitBasePatch16_224", help="model type (default: ResNet50)")
     parser.add_argument("--phase", type=str, default="Mask", help="phase type (default: Mask)")
 
     # Container environment

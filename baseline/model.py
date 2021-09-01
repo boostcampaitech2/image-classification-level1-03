@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
+import timm
 
 
 class BaseModel(nn.Module):
@@ -54,7 +55,104 @@ class MyModel(nn.Module):
         return x
 
 
+class ResNet18(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+
+        self.net = torchvision.models.resnet18(pretrained=True)
+        self.net.fc = nn.Linear(in_features=self.net.fc.weight.shape[1], out_features=num_classes)
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class ResNet34(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+
+        self.net = torchvision.models.resnet34(pretrained=True)
+        self.net.fc = nn.Linear(in_features=self.net.fc.weight.shape[1], out_features=num_classes)
+
+    def forward(self, x):
+        return self.net(x)
+
+
 class ResNet50(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+
+        self.net = torchvision.models.resnet50(pretrained=True)
+        self.net.fc = nn.Linear(in_features=self.net.fc.weight.shape[1], out_features=num_classes)
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class ResNet101(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+
+        self.net = torchvision.models.resnet101(pretrained=True)
+        self.net.fc = nn.Linear(in_features=self.net.fc.weight.shape[1], out_features=num_classes)
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class ResNet152(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+
+        self.net = torchvision.models.resnet152(pretrained=True)
+        self.net.fc = nn.Linear(in_features=self.net.fc.weight.shape[1], out_features=num_classes)
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class VitBaseResnet50_384(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+
+        self.net  = timm.create_model(model_name="vit_base_resnet50_384", num_classes=num_classes, pretrained=True)
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class VitBasePatch16_224(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+
+        self.net  = timm.create_model(model_name="vit_base_patch16_224", num_classes=num_classes, pretrained=True)
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class MaskResNet50(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+
+        self.net = torchvision.models.resnet50(pretrained=True)
+        self.net.fc = nn.Linear(in_features=self.net.fc.weight.shape[1], out_features=num_classes)
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class GenderResNet50(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+
+        self.net = torchvision.models.resnet50(pretrained=True)
+        self.net.fc = nn.Linear(in_features=self.net.fc.weight.shape[1], out_features=num_classes)
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class AgeResNet50(nn.Module):
     def __init__(self, num_classes):
         super().__init__()
 

@@ -13,17 +13,10 @@ from torchvision.transforms import *
 
 import albumentations as A
 
+
 IMG_EXTENSIONS = [
-    ".jpg",
-    ".JPG",
-    ".jpeg",
-    ".JPEG",
-    ".png",
-    ".PNG",
-    ".ppm",
-    ".PPM",
-    ".bmp",
-    ".BMP",
+    ".jpg", ".JPG", ".jpeg", ".JPEG", ".png",
+    ".PNG", ".ppm", ".PPM", ".bmp", ".BMP",
 ]
 
 
@@ -35,7 +28,7 @@ class BaseAugmentation:
     def __init__(self, resize, mean, std, **args):
         self.transform = transforms.Compose(
             [
-                CenterCrop((384, 384)),
+                # CenterCrop((384, 384)),
                 Resize(resize, Image.BILINEAR),
                 RandomHorizontalFlip(),
                 ToTensor(),
@@ -337,7 +330,8 @@ class MaskDataset(Dataset):
         image = self.read_image(index)
         mask_label = self.get_mask_label(index)
         multi_class_label = self.encode_multi_class(mask_label)
-
+        if np.array(image).shape[2] == 4:  # 왜 cropped_images 에서는 size 가 다른 것이 있을까?
+            image = Image.fromarray(np.delete(np.array(image), -1, axis=-1)) # [512, 384, 3] 이 아닌 [512, 384, 4] 일때 마지막 열 255 들을 제거
         image_transform = self.transform(image)
         return image_transform, multi_class_label
 
@@ -453,7 +447,8 @@ class GenderDataset(Dataset):
         image = self.read_image(index)
         gender_label = self.get_gender_label(index)
         multi_class_label = self.encode_multi_class(gender_label)
-
+        if np.array(image).shape[2] == 4:
+            image = Image.fromarray(np.delete(np.array(image), -1, axis=-1))
         image_transform = self.transform(image)
         return image_transform, multi_class_label
 
@@ -569,7 +564,8 @@ class AgeDataset(Dataset):
         image = self.read_image(index)
         age_label = self.get_age_label(index)
         multi_class_label = self.encode_multi_class(age_label)
-
+        if np.array(image).shape[2] == 4:
+            image = Image.fromarray(np.delete(np.array(image), -1, axis=-1))
         image_transform = self.transform(image)
         return image_transform, multi_class_label
 
@@ -676,7 +672,7 @@ class TestDataset(Dataset):
         self.img_paths = img_paths
         self.transform = transforms.Compose(
             [
-                CenterCrop((384, 384)),
+                # CenterCrop((384, 384)),
                 Resize(resize, Image.BILINEAR),
                 ToTensor(),
                 Normalize(mean=mean, std=std),
@@ -685,7 +681,8 @@ class TestDataset(Dataset):
 
     def __getitem__(self, index):
         image = Image.open(self.img_paths[index])
-
+        if np.array(image).shape[2] == 4:
+            image = Image.fromarray(np.delete(np.array(image), -1, axis=-1))
         if self.transform:
             image = self.transform(image)
         return image
