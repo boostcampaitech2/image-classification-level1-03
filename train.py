@@ -10,7 +10,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, OneCycleLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
@@ -95,23 +95,15 @@ def train(data_dir, model_dir, args):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # -- dataset
-    dataset_module = getattr(import_module("dataset"), args.dataset)  # default: TrainDataset
-    dataset = dataset_module(
-        data_dir=data_dir,
+    train_dataset_module = getattr(import_module("dataset"), args.dataset)
+    train_set = train_dataset_module(
+        data_dir=data_dir, transform='train',
     )
-    num_classes = dataset.num_classes  # 18
-
-    # -- augmentation
-    transform_module = getattr(import_module("dataset"), args.augmentation)  # default: Augmentation
-    transform = transform_module(
-        resize=args.resize,
-        mean=dataset.mean,
-        std=dataset.std,
+    valid_dataset_module = getattr(import_module("dataset"), args.dataset)
+    val_set = valid_dataset_module(
+        data_dir=data_dir, transform='valid',
     )
-    dataset.set_transform(transform)
-
-    # -- data_loader
-    train_set, val_set = dataset.split_dataset()
+    num_classes = train_set.num_classes  # 18
 
     train_loader = DataLoader(
         train_set,
@@ -142,9 +134,9 @@ def train(data_dir, model_dir, args):
     optimizer = opt_module(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=args.lr,
-        weight_decay=5e-4
+        weight_decay=1e-5
     )
-    scheduler = StepLR(optimizer, args.lr_decay_step, gamma=0.5)
+    scheduler = OneCycleLR(optimizer, pct_start=0.1, div_factor=1e5, max_lr=0.002, epochs=args.epochs, steps_per_epoch=len(train_loader))
 
     # -- logging
     logger = SummaryWriter(log_dir=save_dir)
@@ -182,6 +174,7 @@ def train(data_dir, model_dir, args):
 
             (loss1 + loss2 + loss3).backward()
             optimizer.step()
+            scheduler.step()
 
             loss_value += ((loss1+loss2+loss3)/3.0).item()
             matches += (match1 + match2 + match3)/3.0
@@ -200,7 +193,7 @@ def train(data_dir, model_dir, args):
                 loss_value = 0
                 matches = 0
 
-        scheduler.step()
+        
 
         # val loop
         with torch.no_grad():
@@ -235,17 +228,17 @@ def train(data_dir, model_dir, args):
 
                 if figure is None:
                     inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
-                    inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
+                    inputs_np = valid_dataset_module.denormalize_image(inputs_np, val_set.mean, val_set.std)
                     figure = grid_image(
-                        inputs_np, labels, (pred1, pred2, pred3), n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
+                        inputs_np, labels, (pred1, pred2, pred3), n=16, shuffle=args.dataset != "TrainSplitByProfileDataset"
                     )
 
             val_loss = np.sum(val_loss_items) / len(val_loader)
             val_acc = np.sum(val_acc_items) / len(val_set)
-            # best_val_loss = min(best_val_loss, val_loss)
+
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                # patience = 0
+                patience = 0
             else:
                 patience += 1
                 print(patience)
@@ -274,22 +267,22 @@ if __name__ == '__main__':
     import os
 
     # Data and model checkpoints directories
-    parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
+    parser.add_argument('--seed', type=int, default=777, help='random seed (default: 777)')
     parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 50)')
     parser.add_argument('--dataset', type=str, default='TrainDataset', help='dataset augmentation type (default: TrainDataset)')
-    parser.add_argument('--augmentation', type=str, default='Augmentation', help='data augmentation type (default: Augmentation)')
+    # parser.add_argument('--augmentation', type=str, default='Augmentation', help='data augmentation type (default: Augmentation)')
     parser.add_argument("--resize", nargs="+", type=list, default=[300, 300], help='resize size for image when training')
     parser.add_argument('--batch_size', type=int, default=64, help='input batch size for training (default: 64)')
     parser.add_argument('--valid_batch_size', type=int, default=64, help='input batch size for validing (default: 64)')
     parser.add_argument('--model', type=str, default='EnsembleModel', help='model type (default: EnsembleModel)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
-    parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
+    # parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='ensemble', help='criterion type (default: ensemble)')
-    parser.add_argument('--lr_decay_step', type=int, default=5, help='learning rate scheduler deacy step (default: 5)')
+    # parser.add_argument('--lr_decay_step', type=int, default=5, help='learning rate scheduler deacy step (default: 5)')
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
-    parser.add_argument('--patience', type=int, default=10, help='check early stopping point (default: 10)')
+    parser.add_argument('--patience', type=int, default=5, help='check early stopping point (default: 10)')
 
     # Container environment
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/images'))
