@@ -62,7 +62,7 @@ def inference(data_dir, model_dir, output_dir, args):
             for i in range(len(pred1)):
                 ans = 0
                 if pred3[i] == 0:
-                    ans += 0
+                    pass
                 elif pred3[i] == 1:
                     ans += 1
                 elif pred3[i] == 2:
