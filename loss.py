@@ -24,15 +24,20 @@ class FocalLoss(nn.Module):
 
 
 class LabelSmoothingLoss(nn.Module):
-    def __init__(self, classes=3, smoothing=0.0, dim=-1):
+    def __init__(self, classes=3, smoothing=0.0, weight=None, dim=-1):
         super(LabelSmoothingLoss, self).__init__()
         self.confidence = 1.0 - smoothing
         self.smoothing = smoothing
+        self.weight = weight
         self.cls = classes
         self.dim = dim
 
     def forward(self, pred, target):
         pred = pred.log_softmax(dim=self.dim)
+
+        if self.weight is not None:
+            pred = pred * self.weight.unsqueeze(0)
+
         with torch.no_grad():
             true_dist = torch.zeros_like(pred)
             true_dist.fill_(self.smoothing / (self.cls - 1))
@@ -69,8 +74,7 @@ _criterion_entrypoints = {
     'cross_entropy': nn.CrossEntropyLoss,
     'focal': FocalLoss,
     'label_smoothing': LabelSmoothingLoss,
-    'f1': F1Loss,
-    'ensemble': nn.CrossEntropyLoss
+    'f1': F1Loss
 }
 
 
@@ -84,9 +88,9 @@ def is_criterion(criterion_name):
 
 def create_criterion(criterion_name, **kwargs):
     if criterion_name == 'ensemble':
-        return (nn.CrossEntropyLoss(weight=torch.tensor([1., 5., 5.])).to('cuda'),
-                nn.CrossEntropyLoss(weight=torch.tensor([6., 4.])).to('cuda'),
-                nn.CrossEntropyLoss(weight=torch.tensor([1., 1., 6.])).to('cuda'))
+        return (LabelSmoothingLoss(classes=3, smoothing=0.05, weight=torch.tensor([1., 5., 5.]).to('cuda')),
+                LabelSmoothingLoss(classes=2, smoothing=0.05, weight=torch.tensor([6., 4.]).to('cuda')),
+                LabelSmoothingLoss(classes=3, smoothing=0.05, weight=torch.tensor([1., 1., 6.]).to('cuda')))
     if is_criterion(criterion_name):
         create_fn = criterion_entrypoint(criterion_name)
         criterion = create_fn(**kwargs)
