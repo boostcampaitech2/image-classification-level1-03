@@ -10,6 +10,7 @@ from tqdm import tqdm
 import shutil
 
 
+
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda" if use_cuda else "cpu")
 
@@ -25,7 +26,7 @@ if not os.path.exists(new_eval_data_dir):
     os.mkdir(new_eval_data_dir)
 
 
-# create new train cropped images
+# create new mtcnn cropped train images
 profiles = os.listdir(train_data_dir)
 center_crop_count = 0
 total = 0
@@ -75,7 +76,7 @@ print(f"center crop count : {center_crop_count}")
 print(f"total : {total}")
 
 
-# create new eval cropped images
+# create new mtcnn cropped eval images
 profiles = os.listdir(eval_data_dir)
 center_crop_count = 0
 total = 0
