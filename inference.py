@@ -59,7 +59,6 @@ def inference(data_dir, model_dir, output_dir, args):
     )
 
     print("Calculating inference results..")
-    answer = []
     with torch.no_grad():
         for idx, images in enumerate(loader):
             images = images.to(device)
@@ -72,8 +71,7 @@ def inference(data_dir, model_dir, output_dir, args):
                 pred3 = encode_age(out3.tolist())
                 pred3 = pred3.to(device)
 
-            answer = [6 * p1 + 3 * p2 + p3 for p1, p2, p3 in zip(pred1, pred2, pred3)]
-
+    answer = [6 * p1 + 3 * p2 + p3 for p1, p2, p3 in zip(pred1, pred2, pred3)]
     info['ans'] = answer
     info.to_csv(os.path.join(output_dir, f'output.csv'), index=False)
     print(f'Inference Done!')
