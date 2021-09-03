@@ -179,10 +179,10 @@ COVID-19의 확산으로 우리나라는 물론 전 세계 사람들은 경제�
 
 <br></br>
 ## 💻 소스 코드 설명 <a name = 'Code'></a>
-- `pseudo_train.py` : pseudo labeling을 활용한 train 코드
-- `earlyStop.py` : overfitting을 방지하기 위한 earlyStop 코드
+- `dataset.py` : dataset 불러오고 전처리하기 위한 코드
+- `efficientnet.py` : Backbone Network인 efficientnet 정의
 - `loss.py` : 학습용 loss함수 정의
-- `models.py` : 모델 정의
+- `model.py` : 모델 정의
 - `trainer.py` : train 코드를 간결하게 하기위한 train helper function
 - `uda_train.py` : [[Paper]](https://arxiv.org/abs/1904.12848) 해당 논문에서 나오는 UDA기법을 적용해보려고 시도한 코드
 
