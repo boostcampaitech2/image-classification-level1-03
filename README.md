@@ -72,9 +72,9 @@ Naver Boostcamp AI Tech 팀 프로젝트 입니다.
 <br>
 
 # Competition Result
-- ### Public LB
-    - ### F1 Score : 0.716
-    - ### Accuracy : 77.508
+- Public LB
+    - F1 Score : 0.716
+    - Accuracy : 77.508
 
 <br>
 
