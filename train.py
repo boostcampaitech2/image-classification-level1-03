@@ -4,12 +4,14 @@ import json
 import os
 import random
 import re
+import copy
 from importlib import import_module
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from torch._C import device
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -84,6 +86,16 @@ def increment_path(path, exist_ok=False):
         n = max(i) + 1 if i else 2
         return f"{path}{n}"
 
+def encode_age(pred):
+    for i, p in enumerate(pred):
+        if p < 30:
+            pred[i] = 0
+        elif p < 57:
+            pred[i] = 1
+        else:
+            pred[i] = 2
+    ret = torch.tensor(pred)
+    return ret
 
 def train(data_dir, model_dir, args):
     seed_everything(args.seed)
@@ -132,7 +144,8 @@ def train(data_dir, model_dir, args):
     # -- model
     model_module = getattr(import_module("model"), args.model)  # default: EnsembleModel
     model = model_module(
-        num_classes=num_classes
+        num_classes=num_classes,
+        mode=args.mode
     ).to(device)
     model = torch.nn.DataParallel(model)
 
@@ -159,11 +172,15 @@ def train(data_dir, model_dir, args):
         model.train()
         loss_value = 0
         matches = 0
+        matches_age = [0, 0, 0]
+        nums_age = [0, 0, 0]
+        age_acc = [0, 0, 0]
+
         for idx, train_batch in enumerate(train_loader):
             inputs, labels = train_batch
             inputs = inputs.to(device)
-            label1, label2, label3 = labels
-            label1, label2, label3 = label1.to(device), label2.to(device), label3.to(device)
+            label1, label2, label3, multi_label, age_label = labels
+            label1, label2, label3, multi_label, age_label = label1.to(device), label2.to(device), label3.to(device), multi_label.to(device), age_label.to(device)
 
             optimizer.zero_grad()
 
@@ -171,34 +188,68 @@ def train(data_dir, model_dir, args):
             pred1 = torch.argmax(out1, dim=-1)
             pred2 = torch.argmax(out2, dim=-1)
             pred3 = torch.argmax(out3, dim=-1)
+            if args.mode == 'reg':
+                out3 = out3.squeeze()
+                pred3 = encode_age(out3.tolist())
+                pred3 = pred3.to(device)
+
+            pred = pred1 * 6 + pred2 * 3 + pred3
 
             match1 = (pred1 == label1).sum().item()
             match2 = (pred2 == label2).sum().item()
             match3 = (pred3 == label3).sum().item()
+            match = (pred==multi_label).sum().item()
+            
+            match_age = [0, 0, 0]
+            num_age = [0, 0, 0]
+            for p, l in zip(pred3, label3):
+                for i in range(3):
+                    if p==i and l==i:
+                        match_age[i] += 1
+            for i in range(3):
+                num_age[i] = (label3==i).sum().item()
+                nums_age[i] += num_age[i]
+                if num_age[i] != 0:
+                    match_age[i] = match_age[i]/num_age[i]
+                matches_age[i] += match_age[i]
+
 
             loss1 = criterion[0](out1, label1)
             loss2 = criterion[1](out2, label2)
-            loss3 = criterion[2](out3, label3)
+            if args.mode == 'reg':
+                loss3 = criterion[2](out3, age_label)
+            else:
+                loss3 = criterion[2](out3, label3)
 
-            (loss1 + loss2 + loss3).backward()
+            (loss1+loss2*loss3).backward()
             optimizer.step()
 
             loss_value += ((loss1+loss2+loss3)/3.0).item()
-            matches += (match1 + match2 + match3)/3.0
-
+            # matches += (match1 + match2 + match3)/3.0
+            matches += match
+            #print(matches_elderly)
             if (idx + 1) % args.log_interval == 0:
                 train_loss = loss_value / args.log_interval
                 train_acc = matches / args.batch_size / args.log_interval
+                for i in range(3):
+                    age_acc[i] = matches_age[i] / args.log_interval#
+                    nums_age[i] /= args.log_interval
                 current_lr = get_lr(optimizer)
                 print(
                     f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || "
-                    f"training loss {train_loss:4.4} || training accuracy {train_acc:4.2%} || lr {current_lr}"
+                    f"t loss {train_loss:4.4} || t acc {train_acc:4.2%} || lr {current_lr} || "
+                    f"age0 acc {age_acc[0]:4.2%} || "
+                    f"age1 acc {age_acc[1]:4.2%} || "
+                    f"age2 acc {age_acc[2]:4.2%}"
                 )
                 logger.add_scalar("Train/loss", train_loss, epoch * len(train_loader) + idx)
                 logger.add_scalar("Train/accuracy", train_acc, epoch * len(train_loader) + idx)
 
                 loss_value = 0
                 matches = 0
+                for i in range(3):
+                    nums_age[i] = 0
+                    matches_age[i] = 0
 
         scheduler.step()
 
@@ -208,30 +259,52 @@ def train(data_dir, model_dir, args):
             model.eval()
             val_loss_items = []
             val_acc_items = []
+            matches_age = [0, 0, 0]
+            nums_age = [0, 0, 0]
             figure = None
             for val_batch in val_loader:
                 inputs, labels = val_batch
                 inputs = inputs.to(device)
-                label1, label2, label3 = labels
-                label1, label2, label3 = label1.to(device), label2.to(device), label3.to(device)
+                label1, label2, label3, multi_label, age_label = labels
+                label1, label2, label3, multi_label, age_label = label1.to(device), label2.to(device), label3.to(device), multi_label.to(device), age_label.to(device)
+
 
                 out1, out2, out3 = model(inputs)
                 pred1 = torch.argmax(out1, dim=-1)
                 pred2 = torch.argmax(out2, dim=-1)
                 pred3 = torch.argmax(out3, dim=-1)
+                if args.mode == 'reg':
+                    out3 = out3.squeeze()
+                    pred3 = encode_age(out3.tolist())
+                    pred3 = pred3.to(device)
+                pred = pred1 * 6 + pred2 * 3 + pred3
 
                 match1 = (pred1 == label1).sum().item()
                 match2 = (pred2 == label2).sum().item()
                 match3 = (pred3 == label3).sum().item()
+                match = (pred==multi_label).sum().item()
+                
+                for p, l in zip(pred3, label3):
+                    for i in range(3):
+                        if p==i and l==i:
+                            matches_age[i] += 1
+                for i in range(3):
+                    nums_age[i] += (label3==i).sum().item()
 
                 loss1 = criterion[0](out1, label1)
                 loss2 = criterion[1](out2, label2)
-                loss3 = criterion[2](out3, label3)
+                if args.mode == 'reg':
+                    loss3 = criterion[2](out3, age_label)
+                else:
+                    loss3 = criterion[2](out3, label3)
 
                 loss_item = ((loss1+loss2+loss3)/3.0).item()
-                acc_item = (match1 + match2 + match3)/3.0
+                # acc_item = (match1 + match2 + match3)/3.0
+                acc_item = match
+
                 val_loss_items.append(loss_item)
                 val_acc_items.append(acc_item)
+
 
                 if figure is None:
                     inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
@@ -241,7 +314,13 @@ def train(data_dir, model_dir, args):
                     )
 
             val_loss = np.sum(val_loss_items) / len(val_loader)
+            val_age_acc = [0, 0, 0]
+            for i in range(3):
+                val_age_acc[i] = matches_age[i] / nums_age[i]
+                print(matches_age[i], nums_age[i])
             val_acc = np.sum(val_acc_items) / len(val_set)
+            print(f"sum = {np.sum(val_acc_items)} and len_val = {len(val_set)} ")
+            print(f"val_acc_items = {val_acc_items}")
             # best_val_loss = min(best_val_loss, val_loss)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
@@ -257,7 +336,10 @@ def train(data_dir, model_dir, args):
             torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
             print(
                 f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
-                f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2}"
+                f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2} || "
+                f"age0 acc : {val_age_acc[0]:4.2%} || "
+                f"age1 acc : {val_age_acc[1]:4.2%} || "
+                f"age2 acc : {val_age_acc[2]:4.2%} "
             )
             logger.add_scalar("Val/loss", val_loss, epoch)
             logger.add_scalar("Val/accuracy", val_acc, epoch)
@@ -275,10 +357,10 @@ if __name__ == '__main__':
 
     # Data and model checkpoints directories
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
-    parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 50)')
+    parser.add_argument('--epochs', type=int, default=5, help='number of epochs to train (default: 50)')
     parser.add_argument('--dataset', type=str, default='TrainDataset', help='dataset augmentation type (default: TrainDataset)')
     parser.add_argument('--augmentation', type=str, default='Augmentation', help='data augmentation type (default: Augmentation)')
-    parser.add_argument("--resize", nargs="+", type=list, default=[300, 300], help='resize size for image when training')
+    parser.add_argument("--resize", nargs="+", type=list, default=[224, 224], help='resize size for image when training')
     parser.add_argument('--batch_size', type=int, default=64, help='input batch size for training (default: 64)')
     parser.add_argument('--valid_batch_size', type=int, default=64, help='input batch size for validing (default: 64)')
     parser.add_argument('--model', type=str, default='EnsembleModel', help='model type (default: EnsembleModel)')
@@ -290,9 +372,10 @@ if __name__ == '__main__':
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
     parser.add_argument('--patience', type=int, default=10, help='check early stopping point (default: 10)')
+    parser.add_argument('--mode', type=str, default='default', help='select mode')
 
     # Container environment
-    parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/images'))
+    parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/cropped_images'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
 
     args = parser.parse_args()
