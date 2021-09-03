@@ -1,20 +1,24 @@
-# image-classification-level1-03
+# [Pstage1] image-classification-level1-03
 image-classification-level1-03 created by GitHub Classroom    
 
 * [Usage](#usage)
 
 ## Usage
 
->**training**
+>**train.py**
 ```bash
 # python train.py
 ```
+- `SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
 
->**inference**
+>**inference.py**
 ```bash
 # python inference.py --model_dir {model_path}
 ```
+- `SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py`
+
 add hyeons branch
+
 # Pstage 1 ] Image Classification
 ###### 😷 마스크 착용 상태 분류 Image Classification
 ###### 📌 본 프로젝트는 [_*Naver AI Boostcamp*_](https://www.edwith.org/bcaitech1/)에서 Team Project로 진행됐습니다.
