@@ -142,6 +142,7 @@ def train(data_dir, model_dir, args):
 
     # -- loss & metric
     criterion = create_criterion(args.criterion)  # default: ensemble
+    print(criterion)
     opt_module = getattr(import_module("torch.optim"), args.optimizer)  # default: Adam
     optimizer = opt_module(
         filter(lambda p: p.requires_grad, model.parameters()),
@@ -184,7 +185,6 @@ def train(data_dir, model_dir, args):
                 pred3 = encode_age(out3.tolist())
                 pred3 = pred3.to(device)
 
-
             match1 = (pred1 == label1).sum().item()
             match2 = (pred2 == label2).sum().item()
             match3 = (pred3 == label3).sum().item()
@@ -207,10 +207,13 @@ def train(data_dir, model_dir, args):
             loss2 = criterion[1](out2, label2)
             if args.mode == 'reg':
                 loss3 = criterion[2](out3, age_label)
+                print(age_label)
+                print(f"out3 : {out3}")
+                print(f"loss3 : {loss3}")
             else:
                 loss3 = criterion[2](out3, label3)
 
-            (loss1+loss2*loss3).backward()
+            (loss1+loss2+loss3).backward()
             optimizer.step()
             scheduler.step()
 
@@ -358,7 +361,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', type=str, default='default', help='select mode')
 
     # Container environment
-    parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/cropped_images'))
+    parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/images'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
 
     args = parser.parse_args()

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from efficientnet import efficientnet_b1
+from efficientnet import efficientnet_b3
 
 
 class BaseModel(nn.Module):
@@ -38,18 +38,18 @@ class BaseModel(nn.Module):
 class EnsembleModel(nn.Module):
     def __init__(self, num_classes, mode):
         super(EnsembleModel, self).__init__()
-        self.feature = efficientnet_b1(pretrained=True, progress=True, num_classes=num_classes).features
+        self.feature = efficientnet_b3(pretrained=True, progress=True, num_classes=num_classes).features
         self.classifier1 = nn.Sequential(
             nn.Dropout(0.2),
-            nn.Linear(1280, 3)) # mask classifier
+            nn.Linear(1536, 3)) # mask classifier
         self.classifier2 = nn.Sequential(
             nn.Dropout(0.2),
-            nn.Linear(1280, 2)) # gender classifier
+            nn.Linear(1536, 2)) # gender classifier
         # age classifier
         if mode == 'reg':
             self.classifier3 = nn.Sequential(
                 nn.Dropout(0.2),
-                nn.Linear(1280, 512, bias=True),
+                nn.Linear(1536, 512, bias=True),
                 nn.ReLU(),
                 nn.Linear(512, 256, bias=True),
                 nn.ReLU(),
@@ -60,7 +60,7 @@ class EnsembleModel(nn.Module):
         else:
             self.classifier3 = nn.Sequential(
                 nn.Dropout(0.2),
-                nn.Linear(1280,3)
+                nn.Linear(1536,3)
             )
 
     def forward(self, x):

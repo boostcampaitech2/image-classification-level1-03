@@ -8,10 +8,11 @@ import torch
 from dataset import TestDataset, TrainDataset
 
 
-def load_model(saved_model, num_classes, device):
+def load_model(saved_model, num_classes, mode, device):
     model_cls = getattr(import_module("model"), args.model)
     model = model_cls(
-        num_classes=num_classes
+        num_classes=num_classes,
+        mode=mode
     )
 
     model_path = os.path.join(saved_model, 'best.pth')
@@ -39,7 +40,8 @@ def inference(data_dir, model_dir, output_dir, args):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     num_classes = TrainDataset.num_classes  # 18
-    model = load_model(model_dir, num_classes, device).to(device)
+    mode = args.mode
+    model = load_model(model_dir, num_classes, mode, device).to(device)
     model.eval()
 
     img_root = os.path.join(data_dir, 'images')
