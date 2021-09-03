@@ -1,17 +1,18 @@
-[P=Stage] image-classification-level1-03
+[P-Stage] Image Classification Level1
 ==========================================
 마스크 착용 상태 Image Classification
 
-
+Naver Boostcamp AI Tech 팀 프로젝트 입니다.
 
 Table of Content
 ==================
 * [대회 개요](#Overview)
 * [데이터 설명](#DataDefinition)
 * [Usage](#usage)
-* [Archive](#archive)
-* []
+* [Archive Contents](#Archive-Contents)
+* [소스 코드 설명](#code)
 
+<br>
 
 대회 개요 <a name = 'Overview'></a>
 ===============
@@ -22,6 +23,8 @@ Table of Content
 - 이를 위해 사람들은 반드시 마스크를 착용해야 할 필요가 있으며, 마스크 착용 상태를 검사하기 위해서는 추가적인 인적자원이 필요할 것입니다.
 - 따라서, 우리는 카메라로 비춰진 사람 얼굴 이미지 만으로 이 사람이 마스크를 쓰고 있는지, 쓰지 않았는지, 정확히 쓴 것이 맞는지 자동으로 가려낼 수 있는 시스템이 필요합니다. 
 - 이 시스템을 통해 적은 인적자원으로도 충분히 검사가 가능할 것입니다.
+
+<br>
 
 데이터 개요 <a name='DataDefinition'></a>
 ===============
@@ -53,7 +56,7 @@ Table of Content
         | 16    | Not wear  | Female | >=60         |
         | 17    | Not wear  | Female | >=60         |
 
-
+<br>
 
 Usage
 =====
@@ -66,7 +69,7 @@ Usage
 
 >**train.py**
 ```bash
-# SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py
+# SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py [parser]
 # parser
 ```
 - parser
@@ -93,7 +96,7 @@ Usage
 
 >**inference.py**
 ```bash
-# SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py
+# SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py [parser]
 ```
 - parser
     - batch_size : batch size 설정
@@ -106,9 +109,10 @@ Usage
 
 <br>
 
-Archive
+Archive Contents<a name='Archive-Contents'></a>
 ===============
 ```
+image-classification-level1-03/
 ├──dataset.py
 ├──efficientnet.py
 ├──evaluation.py
@@ -116,7 +120,7 @@ Archive
 ├──loss.py
 ├──model.py
 ├──README.md
-├──train.py
+└──train.py
 ```
 
 <br>
