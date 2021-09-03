@@ -12,6 +12,7 @@ Naver Boostcamp AI Tech 팀 프로젝트 입니다.
 - [Data Definition](#data-definition)
 - [Evaluation Method](#evaluation-method)
 - [Usage](#usage)
+- [Competition Result](#competition-result)
 - [Archive Contents](#Archive-Contents)
 - [Source Code](#source-code)
 
@@ -66,10 +67,14 @@ Naver Boostcamp AI Tech 팀 프로젝트 입니다.
     - ### $precision = \frac{\text{TP}}{\text{TP} + \text{FP}}$
     - ### $recall = \frac{\text{TP}}{\text{TP} + \text{FN}}$
 
-
-
 <br>
 
+# Competition Result
+- ### Public LB
+    - ### F1 Score : 0.716
+    - ### Accuracy : 77.508
+
+<br>
 
 # Usage
 
