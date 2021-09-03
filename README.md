@@ -9,7 +9,7 @@ image-classification-level1-03 created by GitHub Classroom
 ```bash
 # python train.py
 ```
-`SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py`
+```SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py```
 
 >**inference.py**
 ```bash
