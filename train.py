@@ -242,7 +242,8 @@ def train(data_dir, model_dir, args):
                 for i in range(3):
                     nums_age[i] = 0
                     matches_age[i] = 0
-
+    
+        # scheduler.step()
         
 
         # val loop

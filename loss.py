@@ -78,12 +78,11 @@ _criterion_entrypoints = {
     'ensemble': (LabelSmoothingLoss(classes=3, smoothing=0.05, weight=torch.tensor([1., 5., 5.]).to('cuda')),
                 LabelSmoothingLoss(classes=2, smoothing=0.05, weight=torch.tensor([6., 4.]).to('cuda')),
                 LabelSmoothingLoss(classes=3, smoothing=0.05, weight=torch.tensor([1., 1., 6.]).to('cuda'))),
-    'reg' : (nn.CrossEntropyLoss(weight=torch.tensor([1., 5., 5.])).to('cuda'),
-                nn.CrossEntropyLoss(weight=torch.tensor([6., 4.])).to('cuda'),
-                nn.MSELoss(),
+    'reg' : (LabelSmoothingLoss(classes=3, smoothing=0.05, weight=torch.tensor([1., 5., 5.]).to('cuda')),
+                LabelSmoothingLoss(classes=2, smoothing=0.05, weight=torch.tensor([6., 4.]).to('cuda')),
+                nn.SmoothL1Loss(),
                 ),
 
-    'smooth' : nn.SmoothL1Loss
 }
 
 
