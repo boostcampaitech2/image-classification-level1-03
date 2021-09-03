@@ -221,7 +221,7 @@ def train(data_dir, model_dir, args):
             else:
                 loss3 = criterion[2](out3, label3)
 
-            (loss1+loss2*loss3).backward()
+            (loss1+loss2+loss3).backward()
             optimizer.step()
 
             loss_value += ((loss1+loss2+loss3)/3.0).item()
