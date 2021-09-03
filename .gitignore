@@ -1,0 +1,13 @@
+### Default ignored files for Python ###
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+model/
+output/
+
+
+# pycharm files
+.idea   
+
+# other files
+*.csv
