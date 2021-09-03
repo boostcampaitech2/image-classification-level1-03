@@ -70,28 +70,27 @@ Usage
 >**train.py**
 ```bash
 # SM_CHANNEL_TRAIN=[train image dir] SM_MODEL_DIR=[model saving dir] python train.py [parser]
-# parser
 ```
 - parser
-    - seed : 난수 추출시 seed 값 설정
-    - epoch : epoch 수 설정
-    - dataset : dataset.py내의 사용할 class 설정
-    - augmentation : dataset.py내의 사용할 aumentation class 설정
-    - resize : resize할 이미지 크기 설정
-    - batch_size : batch size 설정
-    - valid_batch_size : validation batch size 설정
-    - model : model.py에서 사용할 model class 설정
-    - optimizer : torch.optim중 사용할 optimizer 설정
-    - lr : learning rate 설정
-    - val_ratio : validation으로 나눌 비율 설정
-    - criterion : loss.py에서 사용할 criterion 설정
-    - lr_decay_step : learning rate decay를 진행할 단위 step 설정
-    - log_interval : loss와 accuracy를 출력, logger에 저장할 interval(간격) 설정
-    - name : model이 저장될 directory 이름 설정
-    - patience : validation loss가 증가하는 것을 용인할 횟수
-    - mode ****: 학습 모델의 종류 설정 (회귀, 분류)
-    - data_dir : 불러올 이미지 데이터셋의 경로 설정
-    - model_dir : model이 저장될 전체 경로 설정
+    - --seed : 난수 추출시 seed 값 설정
+    - --epoch : epoch 수 설정
+    - --dataset : dataset.py내의 사용할 class 설정
+    - --augmentation : dataset.py내의 사용할 aumentation class 설정
+    - --resize : resize할 이미지 크기 설정
+    - --batch_size : batch size 설정
+    - --valid_batch_size : validation batch size 설정
+    - --model : model.py에서 사용할 model class 설정
+    - --optimizer : torch.optim중 사용할 optimizer 설정
+    - --lr : learning rate 설정
+    - --val_ratio : validation으로 나눌 비율 설정
+    - --criterion : loss.py에서 사용할 criterion 설정
+    - --lr_decay_step : learning rate decay를 진행할 단위 step 설정
+    - --log_interval : loss와 accuracy를 출력, logger에 저장할 interval(간격) 설정
+    - --name : model이 저장될 directory 이름 설정
+    - --patience : validation loss가 증가하는 것을 용인할 횟수
+    - --mode : 학습 모델의 종류 설정 (회귀, 분류)
+    - --data_dir : 불러올 이미지 데이터셋의 경로 설정
+    - --model_dir : model이 저장될 전체 경로 설정
 
 
 >**inference.py**
@@ -99,13 +98,13 @@ Usage
 # SM_CHANNEL_EVAL=[eval image dir] SM_CHANNEL_MODEL=[model saved dir] SM_OUTPUT_DATA_DIR=[inference output dir] python inference.py [parser]
 ```
 - parser
-    - batch_size : batch size 설정
-    - resize : resize할 이미지 크기 설정
-    - model : model.py에서 사용할 model class 설정
-    - mode : 불러올 모델의 종류(회귀, 분류) 설정
-    - data_dir : 불러올 이미지 데이터셋의 경로 설정
-    - model_dir : best 모델의 경로 설정
-    - output_dir : output csv를 저장할 경로 설정
+    - --batch_size : batch size 설정
+    - --resize : resize할 이미지 크기 설정
+    - --model : model.py에서 사용할 model class 설정
+    - --mode : 불러올 모델의 종류(회귀, 분류) 설정
+    - --data_dir : 불러올 이미지 데이터셋의 경로 설정
+    - --model_dir : best 모델의 경로 설정
+    - --output_dir : output csv를 저장할 경로 설정
 
 <br>
 
