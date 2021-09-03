@@ -1,21 +1,23 @@
-[P-Stage] Image Classification Level1
-==========================================
+# [P-Stage] Image Classification
+
 마스크 착용 상태 Image Classification
 
 Naver Boostcamp AI Tech 팀 프로젝트 입니다.
 
-Table of Content
-==================
-* [대회 개요](#Overview)
-* [데이터 설명](#DataDefinition)
-* [Usage](#usage)
-* [Archive Contents](#Archive-Contents)
-* [소스 코드 설명](#code)
+<br>
+
+# Table of Content
+
+- [Competition Overview](#competition-overview)
+- [Data Definition](#data-definition)
+- [Evaluation Method](#evaluation-method)
+- [Usage](#usage)
+- [Archive Contents](#Archive-Contents)
+- [Source Code](#source-code)
 
 <br>
 
-대회 개요 <a name = 'Overview'></a>
-===============
+# Competition Overview
 - COVID-19의 확산으로 전 세계 사람들은 경제적, 생산적인 활동에 많은 제약을 가지게 되었습니다.
 - 이에, 우리나라는 COVID-19 확산 방지를 위해 제도적으로 많은 노력을 하고 있습니다.
 - COVID-19의 치사율은 다른 전염병과 달리 비교적 낮은 편에 속하나, 강력한 전염력을 가지고 있습니다.
@@ -26,8 +28,7 @@ Table of Content
 
 <br>
 
-데이터 개요 <a name='DataDefinition'></a>
-===============
+# Data Definition
 - 사람 이미지에 대하여, 마스크를 착용하였는지, 이상하게 착용하였는지, 미착용하였는지에 확인
 - 전체 사람 데이터셋의 60%는 학습 데이터 셋으로 활용
 - Input
@@ -58,11 +59,21 @@ Table of Content
 
 <br>
 
-Usage
-=====
+# Evaluation Method
+- 결과에 대한 평가는 F1 Score 를 통해 진행합니다.
+- F1 Score
+    - ## $F_{1}=2 * \frac{\text{precision} \times \text{recall}}{\text{precision} + \text{recall}}$
+    - ### $precision = \frac{\text{TP}}{\text{TP} + \text{FP}}$
+    - ### $recall = \frac{\text{TP}}{\text{TP} + \text{FN}}$
+
+
+
+<br>
+
+
+# Usage
 
 >**Install Requirements**
-
 ```bash
 # pip install -r requirements.txt
 ```
@@ -108,8 +119,7 @@ Usage
 
 <br>
 
-Archive Contents<a name='Archive-Contents'></a>
-===============
+# Archive Contents
 ```
 image-classification-level1-03/
 ├──dataset.py
@@ -124,8 +134,8 @@ image-classification-level1-03/
 
 <br>
 
-소스 코드 설명 <a name = 'Code'></a>
-======
+# Source Code
+
 - `dataset.py` : 이미지 전처리 수행
 - `efficientnet.py` : EfficientNet 모델 파일
 - `loss.py` : Loss 관련 모듈
