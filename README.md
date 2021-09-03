@@ -13,7 +13,7 @@ Naver Boostcamp AI Tech 팀 프로젝트 입니다.
 - [Evaluation Method](#evaluation-method)
 - [Usage](#usage)
 - [Competition Result](#competition-result)
-- [Archive Contents](#Archive-Contents)
+- [Archive Contents](#archive-contents)
 - [Source Code](#source-code)
 
 <br>
@@ -63,10 +63,12 @@ Naver Boostcamp AI Tech 팀 프로젝트 입니다.
 # Evaluation Method
 - 결과에 대한 평가는 F1 Score 를 통해 진행합니다.
 - F1 Score
-    - ## $F_{1}=2 * \frac{\text{precision} \times \text{recall}}{\text{precision} + \text{recall}}$
-    - ### $precision = \frac{\text{TP}}{\text{TP} + \text{FP}}$
-    - ### $recall = \frac{\text{TP}}{\text{TP} + \text{FN}}$
-
+<br>
+<img src="https://latex.codecogs.com/svg.image?F_1&space;=&space;2&space;*&space;\frac{\mathrm{precision&space;*&space;recall}&space;}{\mathrm{precision}&space;&plus;&space;\mathrm{recall}}&space;" title="F_1 = 2 * \frac{\mathrm{precision * recall} }{\mathrm{precision} + \mathrm{recall}} " />
+<br>
+<img src="https://latex.codecogs.com/svg.image?precision&space;=&space;\frac{\mathrm{TP}&space;}{\mathrm{TP}&space;&plus;&space;\mathrm{FP}}&space;" title="precision = \frac{\mathrm{TP} }{\mathrm{TP} + \mathrm{FP}} " />
+<br>
+<img src="https://latex.codecogs.com/svg.image?recall&space;=&space;\frac{\mathrm{TP}&space;}{\mathrm{TP}&space;&plus;&space;\mathrm{FN}}&space;" title="recall = \frac{\mathrm{TP} }{\mathrm{TP} + \mathrm{FN}} " />
 <br>
 
 # Competition Result
@@ -147,12 +149,3 @@ image-classification-level1-03/
 - `model.py` : 모델 생성
 - `train.py` : 학습에 필요한 파라미터 설정 및 validation
 - `inference.py` : test 이미지에 대한 라벨링 및 csv 파일 생성
-
-<!-- 
-<br></br>
-##  문제정의 및 해결방법 <a name = 'Solution'></a>
-- 해당 대회에 대한 문제를 어떻게 정의하고, 어떻게 풀어갔는지, 최종적으로는 어떤 솔루션을 사용하였는지에 대해서는 각자의 wrap up report에서 기술하고 있습니다. 
-    - [wrapup report](https://docs.google.com/document/d/1DRyilPNVsjNzxif05JKpSIUnwOjDEZjkJKhnANbj094/edit)    
-
-- 위 report에는 대회를 참가한 후, 개인의 회고도 포함되어있습니다.  -->
-
