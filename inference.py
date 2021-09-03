@@ -65,31 +65,12 @@ def inference(data_dir, model_dir, output_dir, args):
             out3 = out3.squeeze()
             pred1 = torch.argmax(out1, dim=-1)
             pred2 = torch.argmax(out2, dim=-1)
-            # pred3 = torch.argmax(out3, dim=-1)
-            pred3 = encode_age(out3.tolist())
-            pred3 = pred3.to(device)
+            pred3 = torch.argmax(out3, dim=-1)
+            if args.mode == 'reg':
+                pred3 = encode_age(out3.tolist())
+                pred3 = pred3.to(device)
 
-            for i in range(len(pred1)):
-                ans = 0
-                if pred3[i] == 0:
-                    pass
-                elif pred3[i] == 1:
-                    ans += 1
-                elif pred3[i] == 2:
-                    ans += 2
-
-                if pred2[i] == 0:
-                    pass
-                elif pred2[i] == 1:
-                    ans += 3
-
-                if pred1[i] == 0:
-                    pass
-                elif pred1[i] == 1:
-                    ans += 6
-                elif pred1[i] == 2:
-                    ans += 12
-                answer.append(ans)
+            answer = [6 * p1 + 3 * p2 + p3 for p1, p2, p3 in zip(pred1, pred2, pred3)]
 
     info['ans'] = answer
     info.to_csv(os.path.join(output_dir, f'output.csv'), index=False)
@@ -103,6 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=64, help='input batch size for validing (default: 64)')
     parser.add_argument('--resize', type=tuple, default=(300, 300), help='resize size for image when you trained (default: (300, 300))')
     parser.add_argument('--model', type=str, default='EnsembleModel', help='model type (default: EnsembleModel)')
+    parser.add_argument('--mode', type=str, default='default', help='mode type (default: default)')
 
     # Container environment
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_EVAL', '/opt/ml/input/data/eval'))
