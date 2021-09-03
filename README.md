@@ -90,7 +90,7 @@ Archive
 
 
 <br></br>
-## 💻 소스 코드 설명 <a name = 'Code'></a>
+##  소스 코드 설명 <a name = 'Code'></a>
 - `dataset.py` : dataset.py 이미지 전처리 수행
 - `efficientnet.py` : EfficientNet 모델 파일
 - `loss.py` : Loss 관련 모듈
@@ -103,9 +103,9 @@ Archive
 
 
 <br></br>
-## 📝 문제정의 및 해결방법 <a name = 'Solution'></a>
+##  문제정의 및 해결방법 <a name = 'Solution'></a>
 - 해당 대회에 대한 문제를 어떻게 정의하고, 어떻게 풀어갔는지, 최종적으로는 어떤 솔루션을 사용하였는지에 대해서는 각자의 wrap up report에서 기술하고 있습니다. 
-    - [wrapup report](https://maihon.oopy.io/study/boostcamp/p-stage/classification/wrapup-report)    
+    - [wrapup report](https://docs.google.com/document/d/1DRyilPNVsjNzxif05JKpSIUnwOjDEZjkJKhnANbj094/edit)    
 
 - 위 report에는 대회를 참가한 후, 개인의 회고도 포함되어있습니다. 
 
