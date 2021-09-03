@@ -70,7 +70,15 @@ _criterion_entrypoints = {
     'focal': FocalLoss,
     'label_smoothing': LabelSmoothingLoss,
     'f1': F1Loss,
-    'ensemble': nn.CrossEntropyLoss,
+    'ensemble': (nn.CrossEntropyLoss(weight=torch.tensor([1., 5., 5.])).to('cuda'),
+                nn.CrossEntropyLoss(weight=torch.tensor([6., 4.])).to('cuda'),
+                nn.CrossEntropyLoss(weight=torch.tensor([1., 1., 6.])).to('cuda')
+                ),
+    'reg' : (nn.CrossEntropyLoss(weight=torch.tensor([1., 5., 5.])).to('cuda'),
+                nn.CrossEntropyLoss(weight=torch.tensor([6., 4.])).to('cuda'),
+                nn.SmoothL1Loss(),
+                ),
+
     'smooth' : nn.SmoothL1Loss
 }
 
@@ -84,15 +92,21 @@ def is_criterion(criterion_name):
 
 
 def create_criterion(criterion_name, **kwargs):
-    if criterion_name == 'ensemble':
-        return (nn.CrossEntropyLoss(weight=torch.tensor([1., 5., 5.])).to('cuda'),
-                nn.CrossEntropyLoss(weight=torch.tensor([6., 4.])).to('cuda'),
-                nn.SmoothL1Loss(),
-                # nn.CrossEntropyLoss(weight=torch.tensor([1., 1., 6.])).to('cuda')
-                )
+    # if criterion_name == 'ensemble':
+    #     return (nn.CrossEntropyLoss(weight=torch.tensor([1., 5., 5.])).to('cuda'),
+    #             nn.CrossEntropyLoss(weight=torch.tensor([6., 4.])).to('cuda'),
+    #             nn.CrossEntropyLoss(weight=torch.tensor([1., 1., 6.])).to('cuda')
+    #             )
+    # elif criterion_name == 'reg':
+    #     return (nn.CrossEntropyLoss(weight=torch.tensor([1., 5., 5.])).to('cuda'),
+    #             nn.CrossEntropyLoss(weight=torch.tensor([6., 4.])).to('cuda'),
+    #             nn.SmoothL1Loss(),
+    #             )
+
     if is_criterion(criterion_name):
         create_fn = criterion_entrypoint(criterion_name)
-        criterion = create_fn(**kwargs)
+        # criterion = create_fn(**kwargs)
+        criterion = create_fn
     else:
         raise RuntimeError('Unknown loss (%s)' % criterion_name)
     return criterion

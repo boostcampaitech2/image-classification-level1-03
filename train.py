@@ -90,7 +90,7 @@ def encode_age(pred):
     for i, p in enumerate(pred):
         if p < 30:
             pred[i] = 0
-        elif p < 60:
+        elif p < 57:
             pred[i] = 1
         else:
             pred[i] = 2
@@ -144,7 +144,8 @@ def train(data_dir, model_dir, args):
     # -- model
     model_module = getattr(import_module("model"), args.model)  # default: EnsembleModel
     model = model_module(
-        num_classes=num_classes
+        num_classes=num_classes,
+        mode=args.mode
     ).to(device)
     model = torch.nn.DataParallel(model)
 
@@ -186,10 +187,12 @@ def train(data_dir, model_dir, args):
             out1, out2, out3 = model(inputs)
             pred1 = torch.argmax(out1, dim=-1)
             pred2 = torch.argmax(out2, dim=-1)
-            # pred3 = torch.argmax(out3, dim=-1)
-            out3 = out3.squeeze()
-            pred3 = encode_age(out3.tolist())
-            pred3 = pred3.to(device)
+            pred3 = torch.argmax(out3, dim=-1)
+            if args.mode == 'reg':
+                out3 = out3.squeeze()
+                pred3 = encode_age(out3.tolist())
+                pred3 = pred3.to(device)
+
             pred = pred1 * 6 + pred2 * 3 + pred3
 
             match1 = (pred1 == label1).sum().item()
@@ -213,9 +216,12 @@ def train(data_dir, model_dir, args):
 
             loss1 = criterion[0](out1, label1)
             loss2 = criterion[1](out2, label2)
-            loss3 = criterion[2](out3, age_label)
+            if args.mode == 'reg':
+                loss3 = criterion[2](out3, age_label)
+            else:
+                loss3 = criterion[2](out3, label3)
 
-            (loss1 + loss2 + loss3).backward()
+            (loss1+loss2*loss3).backward()
             optimizer.step()
 
             loss_value += ((loss1+loss2+loss3)/3.0).item()
@@ -232,9 +238,9 @@ def train(data_dir, model_dir, args):
                 print(
                     f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || "
                     f"t loss {train_loss:4.4} || t acc {train_acc:4.2%} || lr {current_lr} || "
-                    f"age0 acc {age_acc[0]:4.2%} || n of age0 {nums_age[0]} || "
-                    f"age1 acc {age_acc[1]:4.2%} || n of age1 {nums_age[1]} || "
-                    f"age2 acc {age_acc[2]:4.2%} || n of age2 {nums_age[2]}"
+                    f"age0 acc {age_acc[0]:4.2%} || "
+                    f"age1 acc {age_acc[1]:4.2%} || "
+                    f"age2 acc {age_acc[2]:4.2%}"
                 )
                 logger.add_scalar("Train/loss", train_loss, epoch * len(train_loader) + idx)
                 logger.add_scalar("Train/accuracy", train_acc, epoch * len(train_loader) + idx)
@@ -264,12 +270,13 @@ def train(data_dir, model_dir, args):
 
 
                 out1, out2, out3 = model(inputs)
-                out3 = out3.squeeze()
                 pred1 = torch.argmax(out1, dim=-1)
                 pred2 = torch.argmax(out2, dim=-1)
-                # pred3 = torch.argmax(out3, dim=-1)
-                pred3 = encode_age(out3.tolist())
-                pred3 = pred3.to(device)
+                pred3 = torch.argmax(out3, dim=-1)
+                if args.mode == 'reg':
+                    out3 = out3.squeeze()
+                    pred3 = encode_age(out3.tolist())
+                    pred3 = pred3.to(device)
                 pred = pred1 * 6 + pred2 * 3 + pred3
 
                 match1 = (pred1 == label1).sum().item()
@@ -286,7 +293,10 @@ def train(data_dir, model_dir, args):
 
                 loss1 = criterion[0](out1, label1)
                 loss2 = criterion[1](out2, label2)
-                loss3 = criterion[2](out3, age_label)
+                if args.mode == 'reg':
+                    loss3 = criterion[2](out3, age_label)
+                else:
+                    loss3 = criterion[2](out3, label3)
 
                 loss_item = ((loss1+loss2+loss3)/3.0).item()
                 # acc_item = (match1 + match2 + match3)/3.0
@@ -311,7 +321,7 @@ def train(data_dir, model_dir, args):
             val_acc = np.sum(val_acc_items) / len(val_set)
             print(f"sum = {np.sum(val_acc_items)} and len_val = {len(val_set)} ")
             print(f"val_acc_items = {val_acc_items}")
-            best_val_loss = min(best_val_loss, val_loss)
+            # best_val_loss = min(best_val_loss, val_loss)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
             else:
@@ -320,15 +330,15 @@ def train(data_dir, model_dir, args):
 
             if val_acc > best_val_acc:
                 print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
-                # torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
+                torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
                 best_val_acc = val_acc
-            # torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
+            torch.save(model.module.state_dict(), f"{save_dir}/last.pth")
             print(
                 f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
                 f"best acc : {best_val_acc:4.2%}, best loss: {best_val_loss:4.2} || "
-                f"age0 acc : {val_age_acc[0]:4.2%} || n of age0 : {nums_age[0]} || "
-                f"age1 acc : {val_age_acc[1]:4.2%} || n of age1 : {nums_age[1]} || "
-                f"age2 acc : {val_age_acc[2]:4.2%} || n of age2 : {nums_age[2]} "
+                f"age0 acc : {val_age_acc[0]:4.2%} || "
+                f"age1 acc : {val_age_acc[1]:4.2%} || "
+                f"age2 acc : {val_age_acc[2]:4.2%} "
             )
             logger.add_scalar("Val/loss", val_loss, epoch)
             logger.add_scalar("Val/accuracy", val_acc, epoch)
@@ -349,7 +359,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=5, help='number of epochs to train (default: 50)')
     parser.add_argument('--dataset', type=str, default='TrainDataset', help='dataset augmentation type (default: TrainDataset)')
     parser.add_argument('--augmentation', type=str, default='Augmentation', help='data augmentation type (default: Augmentation)')
-    parser.add_argument("--resize", nargs="+", type=list, default=[300, 300], help='resize size for image when training')
+    parser.add_argument("--resize", nargs="+", type=list, default=[224, 224], help='resize size for image when training')
     parser.add_argument('--batch_size', type=int, default=64, help='input batch size for training (default: 64)')
     parser.add_argument('--valid_batch_size', type=int, default=64, help='input batch size for validing (default: 64)')
     parser.add_argument('--model', type=str, default='EnsembleModel', help='model type (default: EnsembleModel)')
@@ -361,9 +371,10 @@ if __name__ == '__main__':
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
     parser.add_argument('--patience', type=int, default=10, help='check early stopping point (default: 10)')
+    parser.add_argument('--mode', type=str, default='default', help='select mode')
 
     # Container environment
-    parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/images'))
+    parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/cropped_images'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
 
     args = parser.parse_args()

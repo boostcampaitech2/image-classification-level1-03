@@ -24,6 +24,17 @@ def load_model(saved_model, num_classes, device):
     return model
 
 
+def encode_age(pred):
+    for i, p in enumerate(pred):
+        if p < 30:
+            pred[i] = 0
+        elif p < 60:
+            pred[i] = 1
+        else:
+            pred[i] = 2
+    ret = torch.tensor(pred)
+    return ret
+
 @torch.no_grad()
 def inference(data_dir, model_dir, output_dir, args):
     """
@@ -55,10 +66,13 @@ def inference(data_dir, model_dir, output_dir, args):
         for idx, images in enumerate(loader):
             images = images.to(device)
             out1, out2, out3 = model(images)
+            out3 = out3.squeeze()
             pred1 = torch.argmax(out1, dim=-1)
             pred2 = torch.argmax(out2, dim=-1)
-            pred3 = torch.argmax(out3, dim=-1)
-            
+            # pred3 = torch.argmax(out3, dim=-1)
+            pred3 = encode_age(out3.tolist())
+            pred3 = pred3.to(device)
+
             for i in range(len(pred1)):
                 ans = 0
                 if pred3[i] == 0:
@@ -96,7 +110,7 @@ if __name__ == '__main__':
 
     # Container environment
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_EVAL', '/opt/ml/input/data/eval'))
-    parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_CHANNEL_MODEL', './model/exp'))
+    parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_CHANNEL_MODEL', './model/reg'))
     parser.add_argument('--output_dir', type=str, default=os.environ.get('SM_OUTPUT_DATA_DIR', './output'))
 
     args = parser.parse_args()

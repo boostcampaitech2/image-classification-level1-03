@@ -287,7 +287,7 @@ class MaskSplitByProfileDataset(MaskBaseDataset):
 class Augmentation:
     def __init__(self, resize, mean, std, **args):
         self.transform = transforms.Compose([
-            CenterCrop((384, 384)),
+            #CenterCrop((384, 384)),
             Resize(resize, Image.BILINEAR),
             RandomHorizontalFlip(),
             ToTensor(),
@@ -372,19 +372,23 @@ class TrainDataset(Dataset):
 
     def __getitem__(self, index):
         assert self.transform is not None, ".set_tranform 메소드를 이용하여 transform 을 주입해주세요"
-
-        image = self.read_image(index)
+        
+        
+        # image = self.read_image(index)
+        image = Image.open(self.image_paths[index])
+        if np.array(image).shape[2] == 4:
+            image = Image.fromarray(np.delete(np.array(image), -1, axis=-1))
         mask_label = self.get_mask_label(index)
         gender_label = self.get_gender_label(index)
         age_label = self.get_age_label(index)
         age_int_label = self.age_int_labels[index]
         
-        if 30<= age_int_label <= 45:
-            age_int_label = 37
-        elif 45 < age_int_label < 60:
-            age_int_label = 52
-        elif age_int_label >= 60:
-            age_int_label = 80
+        if 27<= age_int_label <= 37:
+            age_int_label = 32
+        elif 37 < age_int_label < 57:
+            age_int_label = 47
+        elif age_int_label >= 57:
+            age_int_label = 70
 
         multi_class_label = self.encode_multi_class(mask_label, gender_label, age_label)
 
