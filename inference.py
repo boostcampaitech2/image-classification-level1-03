@@ -14,10 +14,6 @@ def load_model(saved_model, num_classes, device):
         num_classes=num_classes
     )
 
-    # tarpath = os.path.join(saved_model, 'best.tar.gz')
-    # tar = tarfile.open(tarpath, 'r:gz')
-    # tar.extractall(path=saved_model)
-
     model_path = os.path.join(saved_model, 'best.pth')
     model.load_state_dict(torch.load(model_path, map_location=device))
 
@@ -76,7 +72,7 @@ def inference(data_dir, model_dir, output_dir, args):
             for i in range(len(pred1)):
                 ans = 0
                 if pred3[i] == 0:
-                    ans += 0
+                    pass
                 elif pred3[i] == 1:
                     ans += 1
                 elif pred3[i] == 2:

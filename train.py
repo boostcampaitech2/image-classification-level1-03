@@ -11,8 +11,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from torch._C import device
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, OneCycleLR
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
@@ -107,23 +106,15 @@ def train(data_dir, model_dir, args):
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # -- dataset
-    dataset_module = getattr(import_module("dataset"), args.dataset)  # default: TrainDataset
-    dataset = dataset_module(
-        data_dir=data_dir,
+    train_dataset_module = getattr(import_module("dataset"), args.dataset)
+    train_set = train_dataset_module(
+        data_dir=data_dir, transform='train',
     )
-    num_classes = dataset.num_classes  # 18
-
-    # -- augmentation
-    transform_module = getattr(import_module("dataset"), args.augmentation)  # default: Augmentation
-    transform = transform_module(
-        resize=args.resize,
-        mean=dataset.mean,
-        std=dataset.std,
+    valid_dataset_module = getattr(import_module("dataset"), args.dataset)
+    val_set = valid_dataset_module(
+        data_dir=data_dir, transform='valid',
     )
-    dataset.set_transform(transform)
-
-    # -- data_loader
-    train_set, val_set = dataset.split_dataset()
+    num_classes = train_set.num_classes  # 18
 
     train_loader = DataLoader(
         train_set,
@@ -155,9 +146,9 @@ def train(data_dir, model_dir, args):
     optimizer = opt_module(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=args.lr,
-        weight_decay=5e-4
+        weight_decay=1e-5
     )
-    scheduler = StepLR(optimizer, args.lr_decay_step, gamma=0.5)
+    scheduler = OneCycleLR(optimizer, pct_start=0.1, div_factor=1e5, max_lr=0.002, epochs=args.epochs, steps_per_epoch=len(train_loader))
 
     # -- logging
     logger = SummaryWriter(log_dir=save_dir)
@@ -179,8 +170,8 @@ def train(data_dir, model_dir, args):
         for idx, train_batch in enumerate(train_loader):
             inputs, labels = train_batch
             inputs = inputs.to(device)
-            label1, label2, label3, multi_label, age_label = labels
-            label1, label2, label3, multi_label, age_label = label1.to(device), label2.to(device), label3.to(device), multi_label.to(device), age_label.to(device)
+            label1, label2, label3, age_label = labels
+            label1, label2, label3, age_label = label1.to(device), label2.to(device), label3.to(device), age_label.to(device)
 
             optimizer.zero_grad()
 
@@ -193,12 +184,10 @@ def train(data_dir, model_dir, args):
                 pred3 = encode_age(out3.tolist())
                 pred3 = pred3.to(device)
 
-            pred = pred1 * 6 + pred2 * 3 + pred3
 
             match1 = (pred1 == label1).sum().item()
             match2 = (pred2 == label2).sum().item()
             match3 = (pred3 == label3).sum().item()
-            match = (pred==multi_label).sum().item()
             
             match_age = [0, 0, 0]
             num_age = [0, 0, 0]
@@ -223,11 +212,11 @@ def train(data_dir, model_dir, args):
 
             (loss1+loss2*loss3).backward()
             optimizer.step()
+            scheduler.step()
 
             loss_value += ((loss1+loss2+loss3)/3.0).item()
-            # matches += (match1 + match2 + match3)/3.0
-            matches += match
-            #print(matches_elderly)
+            matches += (match1 + match2 + match3)/3.0
+            
             if (idx + 1) % args.log_interval == 0:
                 train_loss = loss_value / args.log_interval
                 train_acc = matches / args.batch_size / args.log_interval
@@ -251,7 +240,7 @@ def train(data_dir, model_dir, args):
                     nums_age[i] = 0
                     matches_age[i] = 0
 
-        scheduler.step()
+        
 
         # val loop
         with torch.no_grad():
@@ -265,8 +254,8 @@ def train(data_dir, model_dir, args):
             for val_batch in val_loader:
                 inputs, labels = val_batch
                 inputs = inputs.to(device)
-                label1, label2, label3, multi_label, age_label = labels
-                label1, label2, label3, multi_label, age_label = label1.to(device), label2.to(device), label3.to(device), multi_label.to(device), age_label.to(device)
+                label1, label2, label3, age_label = labels
+                label1, label2, label3, age_label = label1.to(device), label2.to(device), label3.to(device), age_label.to(device)
 
 
                 out1, out2, out3 = model(inputs)
@@ -277,12 +266,10 @@ def train(data_dir, model_dir, args):
                     out3 = out3.squeeze()
                     pred3 = encode_age(out3.tolist())
                     pred3 = pred3.to(device)
-                pred = pred1 * 6 + pred2 * 3 + pred3
 
                 match1 = (pred1 == label1).sum().item()
                 match2 = (pred2 == label2).sum().item()
                 match3 = (pred3 == label3).sum().item()
-                match = (pred==multi_label).sum().item()
                 
                 for p, l in zip(pred3, label3):
                     for i in range(3):
@@ -299,8 +286,7 @@ def train(data_dir, model_dir, args):
                     loss3 = criterion[2](out3, label3)
 
                 loss_item = ((loss1+loss2+loss3)/3.0).item()
-                # acc_item = (match1 + match2 + match3)/3.0
-                acc_item = match
+                acc_item = (match1 + match2 + match3)/3.0
 
                 val_loss_items.append(loss_item)
                 val_acc_items.append(acc_item)
@@ -308,9 +294,9 @@ def train(data_dir, model_dir, args):
 
                 if figure is None:
                     inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
-                    inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
+                    inputs_np = valid_dataset_module.denormalize_image(inputs_np, val_set.mean, val_set.std)
                     figure = grid_image(
-                        inputs_np, labels, (pred1, pred2, pred3), n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
+                        inputs_np, labels, (pred1, pred2, pred3), n=16, shuffle=args.dataset != "TrainSplitByProfileDataset"
                     )
 
             val_loss = np.sum(val_loss_items) / len(val_loader)
@@ -319,12 +305,9 @@ def train(data_dir, model_dir, args):
                 val_age_acc[i] = matches_age[i] / nums_age[i]
                 print(matches_age[i], nums_age[i])
             val_acc = np.sum(val_acc_items) / len(val_set)
-            print(f"sum = {np.sum(val_acc_items)} and len_val = {len(val_set)} ")
-            print(f"val_acc_items = {val_acc_items}")
-            # best_val_loss = min(best_val_loss, val_loss)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                # patience = 0
+                patience = 0
             else:
                 patience += 1
                 print(patience)
@@ -356,19 +339,19 @@ if __name__ == '__main__':
     import os
 
     # Data and model checkpoints directories
-    parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
-    parser.add_argument('--epochs', type=int, default=5, help='number of epochs to train (default: 50)')
+    parser.add_argument('--seed', type=int, default=777, help='random seed (default: 777)')
+    parser.add_argument('--epochs', type=int, default=50, help='number of epochs to train (default: 50)')
     parser.add_argument('--dataset', type=str, default='TrainDataset', help='dataset augmentation type (default: TrainDataset)')
-    parser.add_argument('--augmentation', type=str, default='Augmentation', help='data augmentation type (default: Augmentation)')
-    parser.add_argument("--resize", nargs="+", type=list, default=[224, 224], help='resize size for image when training')
+    # parser.add_argument('--augmentation', type=str, default='Augmentation', help='data augmentation type (default: Augmentation)')
+    parser.add_argument("--resize", nargs="+", type=list, default=[300, 300], help='resize size for image when training')
     parser.add_argument('--batch_size', type=int, default=64, help='input batch size for training (default: 64)')
     parser.add_argument('--valid_batch_size', type=int, default=64, help='input batch size for validing (default: 64)')
     parser.add_argument('--model', type=str, default='EnsembleModel', help='model type (default: EnsembleModel)')
     parser.add_argument('--optimizer', type=str, default='Adam', help='optimizer type (default: Adam)')
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
-    parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
+    # parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='ensemble', help='criterion type (default: ensemble)')
-    parser.add_argument('--lr_decay_step', type=int, default=5, help='learning rate scheduler deacy step (default: 5)')
+    # parser.add_argument('--lr_decay_step', type=int, default=5, help='learning rate scheduler deacy step (default: 5)')
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
     parser.add_argument('--patience', type=int, default=10, help='check early stopping point (default: 10)')
