@@ -226,7 +226,7 @@ def train(data_dir, model_dir, args):
                 current_lr = get_lr(optimizer)
                 print(
                     f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || "
-                    f"t loss {train_loss:4.4} || t acc {train_acc:4.2%} || lr {current_lr:4.6%} || "
+                    f"t loss {train_loss:4.4} || t acc {train_acc:4.2%} || lr {current_lr:4.6} || "
                     f"age0 acc {age_acc[0]:4.2%} || "
                     f"age1 acc {age_acc[1]:4.2%} || "
                     f"age2 acc {age_acc[2]:4.2%}"
