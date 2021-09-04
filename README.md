@@ -123,7 +123,8 @@ Naver Boostcamp AI Tech 팀 프로젝트 입니다.
     - --model : model.py에서 사용할 model class 설정
     - --mode : 불러올 모델의 종류(회귀, 분류) 설정
     - --data_dir : 불러올 이미지 데이터셋의 경로 설정
-    - --model_dir : best 모델의 경로 설정
+    - --model_dir : best 모델의 경로 설정    
+    --> 회귀 모드 사용 시 **회귀 모델의 경로**로 설정해야합니다.
     - --output_dir : output csv를 저장할 경로 설정
 
 <br>
