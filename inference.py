@@ -67,9 +67,12 @@ def inference(data_dir, model_dir, output_dir, args):
             out3 = out3.squeeze()
             out1 = out1.argmax(dim=-1)
             out2 = out2.argmax(dim=-1)
-            out3 = out3.argmax(dim=-1)
+            
             if args.mode == 'reg':
                 out3 = encode_age(out3.tolist())
+            else:
+                out3 = out3.argmax(dim=-1)
+
             pred1.extend(out1.cpu().numpy())
             pred2.extend(out2.cpu().numpy())
             pred3.extend(out3.cpu().numpy())
