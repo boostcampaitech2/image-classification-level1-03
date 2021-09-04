@@ -207,9 +207,9 @@ def train(data_dir, model_dir, args):
             loss2 = criterion[1](out2, label2)
             if args.mode == 'reg':
                 loss3 = criterion[2](out3, age_label)
-                print(age_label)
-                print(f"out3 : {out3}")
-                print(f"loss3 : {loss3}")
+                # print(age_label)
+                # print(f"out3 : {out3}")
+                # print(f"loss3 : {loss3}")
             else:
                 loss3 = criterion[2](out3, label3)
 
