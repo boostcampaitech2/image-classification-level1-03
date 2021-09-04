@@ -54,8 +54,8 @@ Naver Boostcamp AI Tech 팀 프로젝트 입니다.
         | 12    | Not wear  | Male   | <30          |
         | 13    | Not wear  | Male   | >=30 and <60 |
         | 14    | Not wear  | Male   | >=60         |
-        | 15    | Not wear  | Female | >=60         |
-        | 16    | Not wear  | Female | >=60         |
+        | 15    | Not wear  | Female | <30          |
+        | 16    | Not wear  | Female | >=30 and <60 |
         | 17    | Not wear  | Female | >=60         |
 
 <br>
