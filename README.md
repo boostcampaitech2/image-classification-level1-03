@@ -101,12 +101,14 @@ Naver Boostcamp AI Tech 팀 프로젝트 입니다.
     - --optimizer : torch.optim중 사용할 optimizer 설정
     - --lr : learning rate 설정
     - --val_ratio : validation으로 나눌 비율 설정
-    - --criterion : loss.py에서 사용할 criterion 설정
+    - --criterion : loss.py에서 사용할 criterion 설정 **회귀 모드에서는 reg 사용**
     - --lr_decay_step : learning rate decay를 진행할 단위 step 설정
     - --log_interval : loss와 accuracy를 출력, logger에 저장할 interval(간격) 설정
     - --name : model이 저장될 directory 이름 설정
     - --patience : validation loss가 증가하는 것을 용인할 횟수
-    - --mode : 학습 모델의 종류 설정 (회귀, 분류)
+    - --mode : 학습 모델의 종류 설정 (회귀, 분류)    
+    --> 기본값은 분류이며 회귀 모드로 변경 시 **--criterion reg** 와 함께 사용합니다.
+    
     - --data_dir : 불러올 이미지 데이터셋의 경로 설정
     - --model_dir : model이 저장될 전체 경로 설정
 

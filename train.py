@@ -207,9 +207,6 @@ def train(data_dir, model_dir, args):
             loss2 = criterion[1](out2, label2)
             if args.mode == 'reg':
                 loss3 = criterion[2](out3, age_label)
-                print(age_label)
-                print(f"out3 : {out3}")
-                print(f"loss3 : {loss3}")
             else:
                 loss3 = criterion[2](out3, label3)
 
@@ -307,7 +304,6 @@ def train(data_dir, model_dir, args):
             val_age_acc = [0, 0, 0]
             for i in range(3):
                 val_age_acc[i] = matches_age[i] / nums_age[i]
-                print(matches_age[i], nums_age[i])
             val_acc = np.sum(val_acc_items) / len(val_set)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
