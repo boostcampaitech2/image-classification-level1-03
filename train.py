@@ -229,7 +229,7 @@ def train(data_dir, model_dir, args):
                 current_lr = get_lr(optimizer)
                 print(
                     f"Epoch[{epoch}/{args.epochs}]({idx + 1}/{len(train_loader)}) || "
-                    f"t loss {train_loss:4.4} || t acc {train_acc:4.2%} || lr {current_lr} || "
+                    f"t loss {train_loss:4.4} || t acc {train_acc:4.2%} || lr {current_lr:4.6%} || "
                     f"age0 acc {age_acc[0]:4.2%} || "
                     f"age1 acc {age_acc[1]:4.2%} || "
                     f"age2 acc {age_acc[2]:4.2%}"
@@ -307,14 +307,14 @@ def train(data_dir, model_dir, args):
             val_age_acc = [0, 0, 0]
             for i in range(3):
                 val_age_acc[i] = matches_age[i] / nums_age[i]
-                print(matches_age[i], nums_age[i])
+                # print(matches_age[i], nums_age[i])
             val_acc = np.sum(val_acc_items) / len(val_set)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 patience = 0
             else:
                 patience += 1
-                print(patience)
+                # print(patience)
 
             if val_acc > best_val_acc:
                 print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
