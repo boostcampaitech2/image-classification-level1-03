@@ -59,18 +59,21 @@ def inference(data_dir, model_dir, output_dir, args):
     )
 
     print("Calculating inference results..")
+    pred1, pred2, pred3 = [], [], []
     with torch.no_grad():
         for idx, images in enumerate(loader):
             images = images.to(device)
             out1, out2, out3 = model(images)
             out3 = out3.squeeze()
-            pred1 = torch.argmax(out1, dim=-1)
-            pred2 = torch.argmax(out2, dim=-1)
-            pred3 = torch.argmax(out3, dim=-1)
+            out1 = out1.argmax(dim=-1)
+            out2 = out2.argmax(dim=-1)
+            out3 = out3.argmax(dim=-1)
             if args.mode == 'reg':
-                pred3 = encode_age(out3.tolist())
-                pred3 = pred3.to(device)
-
+                out3 = encode_age(out3.tolist())
+            pred1.extend(out1.cpu().numpy())
+            pred2.extend(out2.cpu().numpy())
+            pred3.extend(out3.cpu().numpy())
+            
     answer = [6 * p1 + 3 * p2 + p3 for p1, p2, p3 in zip(pred1, pred2, pred3)]
     info['ans'] = answer
     info.to_csv(os.path.join(output_dir, f'output.csv'), index=False)
