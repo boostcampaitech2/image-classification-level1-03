@@ -64,11 +64,11 @@ def inference(data_dir, model_dir, output_dir, args):
         for idx, images in enumerate(loader):
             images = images.to(device)
             out1, out2, out3 = model(images)
-            out3 = out3.squeeze()
             out1 = out1.argmax(dim=-1)
             out2 = out2.argmax(dim=-1)
 
             if args.mode == 'reg':
+                out3 = out3.squeeze()
                 out3 = encode_age(out3.tolist())
             else:
                 out3 = out3.argmax(dim=-1)
